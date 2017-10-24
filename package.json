@@ -1,0 +1,23 @@
+{
+  "name": "angular-named-lazy-chunks-webpack-plugin",
+  "version": "1.0.0",
+  "description": "Webpack plugin that assigns names to the async chunks generated for lazy routes in an Angular app.",
+  "main": "index.js",
+  "dependencies": {
+    "webpack": ">= 2.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Independer/angular-named-lazy-chunks-webpack-plugin.git"
+  },
+  "keywords": [
+    "angular",
+    "webpack"
+  ],
+  "author": "Pavlo Glazkov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Independer/angular-named-lazy-chunks-webpack-plugin/issues"
+  },
+  "homepage": "https://github.com/Independer/angular-named-lazy-chunks-webpack-plugin#readme"
+}
