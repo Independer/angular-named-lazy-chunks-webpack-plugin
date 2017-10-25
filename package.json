@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Webpack plugin that assigns names to the async chunks generated for lazy routes in an Angular app.",
   "main": "index.js",
-  "dependencies": {
+  "peerDependencies": {
     "webpack": ">= 2.4.0"
   },
   "repository": {
