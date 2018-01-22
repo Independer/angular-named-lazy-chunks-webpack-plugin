@@ -39,6 +39,7 @@
   },
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "ci": "npm run test -- --ci index.test.js"
   }
 }
