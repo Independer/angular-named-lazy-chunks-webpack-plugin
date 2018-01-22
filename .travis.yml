@@ -1,0 +1,19 @@
+sudo: false
+dist: trusty
+language: node_js
+
+node_js:
+  - "6"
+
+install:
+    - npm install
+
+matrix:
+  fast_finish: true
+
+cache:
+  directories:
+    - "node_modules"
+
+script:
+    - npm run test
