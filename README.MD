@@ -75,7 +75,7 @@ module.exports = {
   // app1.gallery.155b2d62f27ec0c62c13.js).
   multiAppMode: boolean,
 
-  // Default: "apps\\\\(.*?)\\\\"
+  // Default: "apps(\\\/|\\\\)(.*?)(\\\/|\\\\)"
   // When "multiAppMode" is set to "true" this regular expression is used for
   // extracting the name of the app from the module file path.
   // E.g. if you have the following file structure:
@@ -88,7 +88,13 @@ module.exports = {
   //     module2
   // The chunks will be named "app1.module1.15..c13.js", 
   // "app2.module1.9d...745.js", etc.
-  appNameRegex: string
+  // 
+  // Note: If a custom regex expression is provide, the name of the app is assumed to be the first match group in that regex.
+  appNameRegex: string,
+  
+  // A function that returns the name of the chunk based on the file path of the lazy module.
+  // If this function is specified then "multiAppMode" and "appNameRegex" are ignored.   
+  nameResolver: (filePath: string) => string | null
 }
 ```
 
