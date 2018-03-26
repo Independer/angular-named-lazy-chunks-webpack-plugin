@@ -18,13 +18,13 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
     // Append a dot and number if the name already exists.
     const nameMap = new Map();
 
-    function getUniqueName(baseName) {
+    function getUniqueName(baseName, request) {
       let name = baseName;
       let num = 0;
-      while (nameMap.has(name)) {
+      while (nameMap.has(name) && nameMap.get(name) !== request) {
         name = `${baseName}.${num++}`;
       }
-      nameMap.set(name, true);
+      nameMap.set(name, request);
       return name;
     }
 
@@ -92,7 +92,7 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
 
         let baseName = createChunkNameFromModuleFilePath(req);
 
-        return baseName ? getUniqueName(baseName) : null;
+        return baseName ? getUniqueName(baseName, req) : null;
       }
 
       return null;
