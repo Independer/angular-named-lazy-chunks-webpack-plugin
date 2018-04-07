@@ -81,18 +81,22 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
       }
 
       // Try to figure out if it's a lazy loaded route or import().
-      if (chunk.blocks
-        && chunk.blocks.length > 0
-        && chunk.blocks[0] instanceof AsyncDependenciesBlock
-        && chunk.blocks[0].dependencies.length === 1
-        && (chunk.blocks[0].dependencies[0] instanceof ContextElementDependency
-          || chunk.blocks[0].dependencies[0] instanceof ImportDependency)
-      ) {
-        const req = chunk.blocks[0].dependencies[0].request;
+      for (let group of chunk.groupsIterable) {
+        const blocks = group.getBlocks();
 
-        let baseName = createChunkNameFromModuleFilePath(req);
-
-        return baseName ? getUniqueName(baseName, req) : null;
+        if (blocks
+          && blocks.length > 0
+          && blocks[0] instanceof AsyncDependenciesBlock
+          && blocks[0].dependencies.length === 1
+          && (blocks[0].dependencies[0] instanceof ContextElementDependency
+            || blocks[0].dependencies[0] instanceof ImportDependency)
+        ) {
+          const req = blocks[0].dependencies[0].request;
+  
+          let baseName = createChunkNameFromModuleFilePath(req);
+  
+          return baseName ? getUniqueName(baseName, req) : null;
+        }
       }
 
       return null;
