@@ -35,7 +35,8 @@
   "jest": {
     "testMatch": [
       "**/?(*.)(spec|test).js?(x)"
-    ]
+    ],
+    "testEnvironment": "node"
   },
   "scripts": {
     "test": "jest",
