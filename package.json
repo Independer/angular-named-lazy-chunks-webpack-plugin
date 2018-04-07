@@ -1,10 +1,10 @@
 {
   "name": "angular-named-lazy-chunks-webpack-plugin",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Webpack plugin that assigns names to the async chunks generated for lazy routes in an Angular app.",
   "main": "index.js",
   "peerDependencies": {
-    "webpack": ">= 2.4.0"
+    "webpack": ">=2.4.0 <4.0.0"
   },
   "repository": {
     "type": "git",
@@ -35,7 +35,8 @@
   "jest": {
     "testMatch": [
       "**/?(*.)(spec|test).js?(x)"
-    ]
+    ],
+    "testEnvironment": "node"
   },
   "scripts": {
     "test": "jest",
