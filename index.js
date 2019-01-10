@@ -5,6 +5,8 @@ const basename = require('path').basename;
 const AsyncDependenciesBlock = require('webpack/lib/AsyncDependenciesBlock');
 const ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
 const ImportDependency = require('webpack/lib/dependencies/ImportDependency');
+const CommonJsRequireDependency = require('webpack/lib/dependencies/CommonJsRequireDependency');
+
 
 class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
   constructor(config) {
@@ -85,16 +87,17 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
 
         if (blocks
           && blocks.length > 0
-          && blocks[0] instanceof AsyncDependenciesBlock
-          && blocks[0].dependencies.length === 1
-          && (blocks[0].dependencies[0] instanceof ContextElementDependency
-            || blocks[0].dependencies[0] instanceof ImportDependency)
-        ) {
-          const req = blocks[0].dependencies[0].request;
-  
-          let baseName = createChunkNameFromModuleFilePath(req);
-  
-          return baseName ? getUniqueName(baseName, req) : null;
+          && blocks[0].dependencies.length > 0
+          && blocks[0] instanceof AsyncDependenciesBlock) {
+            for (let dep of blocks[0].dependencies) {
+                if (dep instanceof ContextElementDependency
+                    || dep instanceof ImportDependency
+                    || dep instanceof CommonJsRequireDependency) {
+                    const req = dep.request;
+                    let baseName = createChunkNameFromModuleFilePath(req);
+                    return baseName ? getUniqueName(baseName, req) : null;
+                }
+            }
         }
       }
 
