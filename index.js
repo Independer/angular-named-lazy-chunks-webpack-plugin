@@ -19,16 +19,13 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
     }
 
     // Append a dot and number if the name already exists.
-    const nameSet = new Set();
-    let lastCompilationId = -1;
-
     function getUniqueName(baseName) {
       let name = baseName;
       let num = 0;
-      while (nameSet.has(name)) {
+      while (this.nameSet.has(name)) {
         name = `${baseName}.${num++}`;
       }
-      nameSet.add(name);
+      this.nameSet.add(name);
       return name;
     }
 
@@ -78,12 +75,7 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
       return result;
     }
 
-    const nameResolver = (chunk, compilationId) => {
-      // Clear used chunk names
-      if (lastCompilationId !== compilationId) {
-        lastCompilationId = compilationId;
-        nameSet.clear();
-      }
+    const nameResolver = (chunk) => {
       // Entry chunks have a name already, use it.
       if (chunk.name) {
         return chunk.name;
@@ -103,7 +95,7 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
                 || dep instanceof CommonJsRequireDependency) {
               const req = dep.request;
               let baseName = createChunkNameFromModuleFilePath(req);
-              return baseName ? getUniqueName(baseName) : null;
+              return baseName ? getUniqueName.bind(this)(baseName) : null;
             }
           }
         }
@@ -113,19 +105,20 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
     };
 
     super(nameResolver);
-    this.compilationId = 0;
+    this.nameSet = new Set();
   }
 
   apply(compiler) {
     compiler.hooks.compilation.tap("NamedChunksPlugin", compilation => {
+      // Clear used chunk names
+      this.nameSet.clear();
       compilation.hooks.beforeChunkIds.tap("NamedChunksPlugin", chunks => {
         for (const chunk of chunks) {
           if (chunk.id === null) {
-            chunk.id = this.nameResolver(chunk, this.compilationId);
+            chunk.id = this.nameResolver(chunk);
           }
         }
       });
-      this.compilationId++;
     });
   }
 }
