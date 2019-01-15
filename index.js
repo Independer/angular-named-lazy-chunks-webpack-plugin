@@ -9,8 +9,6 @@ const CommonJsRequireDependency = require('webpack/lib/dependencies/CommonJsRequ
 
 
 class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
-
-
   constructor(config) {
     config = config || {};
 
@@ -35,8 +33,8 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
       const appNameRegex = config.appNameRegex || 'apps(\\\/|\\\\)(.*?)(\\\/|\\\\)';
       const appNameMatch = new RegExp(appNameRegex).exec(filePath);
       const matchIndex = config.appNameRegex
-          ? 1 // Assume that if custom regex is provide the name of the app is the first match
-          : 2; // Otherwise, the name of the app is the second match based on the default regex above
+        ? 1 // Assume that if custom regex is provide the name of the app is the first match
+        : 2; // Otherwise, the name of the app is the second match based on the default regex above
 
       if (appNameMatch && appNameMatch.length > matchIndex) {
         appName = appNameMatch[matchIndex];
@@ -86,13 +84,13 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
         const blocks = group.getBlocks();
 
         if (blocks
-            && blocks.length > 0
-            && blocks[0].dependencies.length > 0
-            && blocks[0] instanceof AsyncDependenciesBlock) {
+          && blocks.length > 0
+          && blocks[0].dependencies.length > 0
+          && blocks[0] instanceof AsyncDependenciesBlock) {
           for (let dep of blocks[0].dependencies) {
             if (dep instanceof ContextElementDependency
-                || dep instanceof ImportDependency
-                || dep instanceof CommonJsRequireDependency) {
+              || dep instanceof ImportDependency
+              || dep instanceof CommonJsRequireDependency) {
               const req = dep.request;
               let baseName = createChunkNameFromModuleFilePath(req);
               return baseName ? getUniqueName.bind(this)(baseName) : null;
