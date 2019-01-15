@@ -5,8 +5,12 @@ const basename = require('path').basename;
 const AsyncDependenciesBlock = require('webpack/lib/AsyncDependenciesBlock');
 const ContextElementDependency = require('webpack/lib/dependencies/ContextElementDependency');
 const ImportDependency = require('webpack/lib/dependencies/ImportDependency');
+const CommonJsRequireDependency = require('webpack/lib/dependencies/CommonJsRequireDependency');
+
 
 class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
+
+
   constructor(config) {
     config = config || {};
 
@@ -15,15 +19,13 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
     }
 
     // Append a dot and number if the name already exists.
-    const nameMap = new Map();
-
-    function getUniqueName(baseName, request) {
+    function getUniqueName(baseName) {
       let name = baseName;
       let num = 0;
-      while (nameMap.has(name) && nameMap.get(name) !== request) {
+      while (this.nameSet.has(name)) {
         name = `${baseName}.${num++}`;
       }
-      nameMap.set(name, request);
+      this.nameSet.add(name);
       return name;
     }
 
@@ -32,9 +34,9 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
 
       const appNameRegex = config.appNameRegex || 'apps(\\\/|\\\\)(.*?)(\\\/|\\\\)';
       const appNameMatch = new RegExp(appNameRegex).exec(filePath);
-      const matchIndex = config.appNameRegex 
-        ? 1 // Assume that if custom regex is provide the name of the app is the first match
-        : 2; // Otherwise, the name of the app is the second match based on the default regex above
+      const matchIndex = config.appNameRegex
+          ? 1 // Assume that if custom regex is provide the name of the app is the first match
+          : 2; // Otherwise, the name of the app is the second match based on the default regex above
 
       if (appNameMatch && appNameMatch.length > matchIndex) {
         appName = appNameMatch[matchIndex];
@@ -54,7 +56,7 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
         result = config.nameResolver(filePath);
       }
       else {
-        // Default logic of formatting the name if "nameResolver" is not specified        
+        // Default logic of formatting the name if "nameResolver" is not specified
 
         let moduleName = parseModuleName(filePath);
 
@@ -84,17 +86,18 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
         const blocks = group.getBlocks();
 
         if (blocks
-          && blocks.length > 0
-          && blocks[0] instanceof AsyncDependenciesBlock
-          && blocks[0].dependencies.length === 1
-          && (blocks[0].dependencies[0] instanceof ContextElementDependency
-            || blocks[0].dependencies[0] instanceof ImportDependency)
-        ) {
-          const req = blocks[0].dependencies[0].request;
-  
-          let baseName = createChunkNameFromModuleFilePath(req);
-  
-          return baseName ? getUniqueName(baseName, req) : null;
+            && blocks.length > 0
+            && blocks[0].dependencies.length > 0
+            && blocks[0] instanceof AsyncDependenciesBlock) {
+          for (let dep of blocks[0].dependencies) {
+            if (dep instanceof ContextElementDependency
+                || dep instanceof ImportDependency
+                || dep instanceof CommonJsRequireDependency) {
+              const req = dep.request;
+              let baseName = createChunkNameFromModuleFilePath(req);
+              return baseName ? getUniqueName.bind(this)(baseName) : null;
+            }
+          }
         }
       }
 
@@ -102,6 +105,21 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
     };
 
     super(nameResolver);
+    this.nameSet = new Set();
+  }
+
+  apply(compiler) {
+    compiler.hooks.compilation.tap("NamedChunksPlugin", compilation => {
+      // Clear used chunk names
+      this.nameSet.clear();
+      compilation.hooks.beforeChunkIds.tap("NamedChunksPlugin", chunks => {
+        for (const chunk of chunks) {
+          if (chunk.id === null) {
+            chunk.id = this.nameResolver(chunk);
+          }
+        }
+      });
+    });
   }
 }
 
