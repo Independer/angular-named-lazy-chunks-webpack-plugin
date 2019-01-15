@@ -9,6 +9,8 @@ const CommonJsRequireDependency = require('webpack/lib/dependencies/CommonJsRequ
 
 
 class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
+
+
   constructor(config) {
     config = config || {};
 
@@ -17,15 +19,16 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
     }
 
     // Append a dot and number if the name already exists.
-    const nameMap = new Map();
+    const nameSet = new Set();
+    let lastCompilationId = -1;
 
-    function getUniqueName(baseName, request) {
+    function getUniqueName(baseName) {
       let name = baseName;
       let num = 0;
-      while (nameMap.has(name) && nameMap.get(name) !== request) {
+      while (nameSet.has(name)) {
         name = `${baseName}.${num++}`;
       }
-      nameMap.set(name, request);
+      nameSet.add(name);
       return name;
     }
 
@@ -34,9 +37,9 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
 
       const appNameRegex = config.appNameRegex || 'apps(\\\/|\\\\)(.*?)(\\\/|\\\\)';
       const appNameMatch = new RegExp(appNameRegex).exec(filePath);
-      const matchIndex = config.appNameRegex 
-        ? 1 // Assume that if custom regex is provide the name of the app is the first match
-        : 2; // Otherwise, the name of the app is the second match based on the default regex above
+      const matchIndex = config.appNameRegex
+          ? 1 // Assume that if custom regex is provide the name of the app is the first match
+          : 2; // Otherwise, the name of the app is the second match based on the default regex above
 
       if (appNameMatch && appNameMatch.length > matchIndex) {
         appName = appNameMatch[matchIndex];
@@ -56,7 +59,7 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
         result = config.nameResolver(filePath);
       }
       else {
-        // Default logic of formatting the name if "nameResolver" is not specified        
+        // Default logic of formatting the name if "nameResolver" is not specified
 
         let moduleName = parseModuleName(filePath);
 
@@ -75,7 +78,12 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
       return result;
     }
 
-    const nameResolver = (chunk) => {
+    const nameResolver = (chunk, compilationId) => {
+      // Clear used chunk names
+      if (lastCompilationId !== compilationId) {
+        lastCompilationId = compilationId;
+        nameSet.clear();
+      }
       // Entry chunks have a name already, use it.
       if (chunk.name) {
         return chunk.name;
@@ -86,18 +94,18 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
         const blocks = group.getBlocks();
 
         if (blocks
-          && blocks.length > 0
-          && blocks[0].dependencies.length > 0
-          && blocks[0] instanceof AsyncDependenciesBlock) {
-            for (let dep of blocks[0].dependencies) {
-                if (dep instanceof ContextElementDependency
-                    || dep instanceof ImportDependency
-                    || dep instanceof CommonJsRequireDependency) {
-                    const req = dep.request;
-                    let baseName = createChunkNameFromModuleFilePath(req);
-                    return baseName ? getUniqueName(baseName, req) : null;
-                }
+            && blocks.length > 0
+            && blocks[0].dependencies.length > 0
+            && blocks[0] instanceof AsyncDependenciesBlock) {
+          for (let dep of blocks[0].dependencies) {
+            if (dep instanceof ContextElementDependency
+                || dep instanceof ImportDependency
+                || dep instanceof CommonJsRequireDependency) {
+              const req = dep.request;
+              let baseName = createChunkNameFromModuleFilePath(req);
+              return baseName ? getUniqueName(baseName) : null;
             }
+          }
         }
       }
 
@@ -105,6 +113,20 @@ class AngularNamedLazyChunksWebpackPlugin extends webpack.NamedChunksPlugin {
     };
 
     super(nameResolver);
+    this.compilationId = 0;
+  }
+
+  apply(compiler) {
+    compiler.hooks.compilation.tap("NamedChunksPlugin", compilation => {
+      compilation.hooks.beforeChunkIds.tap("NamedChunksPlugin", chunks => {
+        for (const chunk of chunks) {
+          if (chunk.id === null) {
+            chunk.id = this.nameResolver(chunk, this.compilationId);
+          }
+        }
+      });
+      this.compilationId++;
+    });
   }
 }
 
